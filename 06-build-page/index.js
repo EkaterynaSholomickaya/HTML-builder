@@ -16,67 +16,72 @@ fs.stat(pathDir, (err) => {
       if (err) throw err;
       addStyles();
     });
-  } else if (err.code === 'ENOENT') {
-    console.log('Директории project-dist нет');
   }
-  addStyles();
+  // if (err.code === 'ENOENT') {
+  //   console.log('Директории project-dist нет');
+  // }
+  else addStyles();
 });
 
 const addStyles = () => {
   fs.mkdir(pathDir, { recursive: true }, (err) => {
     if (err) throw err;
     console.log('Cоздаем директорию');
-  });
 
-  const readStyleFile = (file) => {
-    console.log('заашли в чтение стилей');
+    const readStyleFile = (file, writeStream) => {
+      console.log('заашли в чтение стилей');
 
-    if (file.isFile() && path.extname(file.name) == '.css') {
-      const filePath = path.join(pathStyle, file.name);
-      console.log('filePath----------------------', filePath);
+      if (file.isFile() && path.extname(file.name) == '.css') {
+        const filePath = path.join(pathStyle, file.name);
+        console.log('filePath----------------------', filePath);
 
-      const readStream = fs.createReadStream(filePath);
-      readStream.on('data', function (chunk) {
-        console.log('записываем --------------------------------------------');
+        const readStream = fs.createReadStream(filePath);
+        readStream.on('data', function (chunk) {
+          console.log(
+            'записываем --------------------------------------------'
+          );
 
-        //writeStream.write(chunk.toString());
-      });
-    }
-  };
+          writeStream.write(chunk.toString());
+        });
+      }
+    };
 
-  const readDir = (pathStyle) => {
-    console.log('pathStyle ------------------------------------', pathStyle);
+    const readDir = (pathStyle) => {
+      console.log('pathStyle ------------------------------------', pathStyle);
 
-    fs.readdir(pathStyle, { withFileTypes: true }, (err, data) => {
-      if (err) throw err;
-      console.log('data --------------------------', data);
-      console.log('pethProject --------------------------', pethProject);
-      //const writeStream = fs.createWriteStream(pethProject);
-
-      data.forEach((name) => {
-        readStyleFile(name);
-      });
-    });
-  };
-
-  fs.access(pethProject, (err) => {
-    if (err) {
-      console.log(
-        'проверяем наличие файла ------------------------------------------'
-      );
-      readDir(pathStyle);
-    } else {
-      fs.rm(pethProject, { withFileTypes: true }, (err) => {
+      fs.readdir(pathStyle, { withFileTypes: true }, (err, data) => {
         if (err) throw err;
+        // console.log('data --------------------------', data);
+        // console.log('pethProject --------------------------', pethProject);
+        // const now = new Date();
+        // console.log(now);
+
+        const writeStream = fs.createWriteStream(pethProject);
+
+        data.forEach((name) => {
+          readStyleFile(name, writeStream);
+        });
+      });
+    };
+
+    fs.access(pethProject, (err) => {
+      if (err) {
         console.log(
-          'удаляем файл стайл ------------------------------------------'
+          'проверяем наличие файла ------------------------------------------'
         );
         readDir(pathStyle);
-      });
-    }
+      } else {
+        fs.rm(pethProject, { withFileTypes: true }, (err) => {
+          if (err) throw err;
+          console.log(
+            'удаляем файл стайл ------------------------------------------'
+          );
+          readDir(pathStyle);
+        });
+      }
+    });
   });
 };
-
 //-------------------------- работа со стилями ----------------------------------
 
 // const readStyleFile = (file, writeStream) => {
