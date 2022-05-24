@@ -16,6 +16,7 @@ fs.stat(pathDir, (err) => {
       if (err) throw err;
       addStyles();
       addAssets();
+      htmlBilder();
     });
   }
   // if (err.code === 'ENOENT') {
@@ -24,6 +25,7 @@ fs.stat(pathDir, (err) => {
   else {
     addStyles();
     addAssets();
+    htmlBilder();
   }
 });
 
@@ -79,14 +81,6 @@ const addAssets = () => {
   const pathFilesDir = path.join(__dirname, 'assets');
   const pathCopyDir = path.join(__dirname, 'project-dist', 'assets');
 
-  // fs.mkdir(pathCopyDir, { recursive: true }, (err) => {
-  //   if (err) throw err;
-  //   fs.readdir(pathFilesDir, (err, data) => {
-  //     if (err) throw err;
-  //     console.log('data----------', data);
-  //   });
-  // });
-
   fs.stat(pathCopyDir, (err) => {
     if (!err) {
       fs.rm(pathCopyDir, { recursive: true }, (err) => {
@@ -103,11 +97,6 @@ const addAssets = () => {
       if (err) throw err;
     });
 
-    // fs.readdir(pathFilesDir, (err, data) => {
-    //   if (err) throw err;
-    //   console.log(data);
-    // });
-
     fs.readdir(pathFilesDir, (err, data) => {
       if (err) throw err;
       data.forEach((name) => {
@@ -120,5 +109,65 @@ const addAssets = () => {
         });
       });
     });
+  };
+};
+
+//------------------ сборка html -----------------------------
+
+const htmlBilder = () => {
+  const templatePath = path.join(__dirname, 'template.html');
+  const resultHtmlPath = path.join(__dirname, 'project-dist', 'index.html');
+  const componentsPath = path.join(__dirname, 'components');
+
+  // ----------- читаем папку компоненты ----------------------
+
+  // fs.readdir(componentsPath, { withFileTypes: true }, (err, data) => {
+  //   if (err) throw err;
+  //   console.log('dannye -------', data);
+  // });
+
+  // ------------- читаем template ------------------------------------
+
+  let resultHtml = '';
+
+  const readSrteamTemplate = fs.createReadStream(templatePath);
+  readSrteamTemplate.on('data', (chunk) => {
+    resultHtml += chunk.toString();
+  });
+
+  readSrteamTemplate.on('end', () => {
+    insertComponent(resultHtml);
+  });
+
+  //------------------- вставляем компоненты -----------------------------
+
+  const insertComponent = (text) => {
+    if (text.indexOf('{{') !== -1) {
+      const indexEnd = text.indexOf('}}');
+      const index = text.indexOf('{{');
+
+      let component = text.slice(index + 2, indexEnd);
+
+      const pathCurrentCompanent = path.join(
+        componentsPath,
+        component + '.html'
+      );
+
+      let componentInner = '';
+      const readStreamComponent = fs.createReadStream(pathCurrentCompanent);
+      readStreamComponent.on('data', (chunk) => {
+        componentInner += chunk;
+      });
+      readStreamComponent.on('end', () => {
+        resultHtml = resultHtml.replace(
+          '{{' + component + '}}',
+          componentInner
+        );
+        insertComponent(resultHtml);
+      });
+    } else {
+      const writeStream = fs.createWriteStream(resultHtmlPath);
+      writeStream.write(resultHtml);
+    }
   };
 };
