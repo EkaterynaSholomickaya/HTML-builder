@@ -20,13 +20,15 @@ const stdout = process.stdout;
 stdout.write('Hi!  Write text: \n');
 stdin.on('data', (data) => {
   if (data.toString().trim() === 'exit') {
+    console.log('Good bye');
     process.exit();
   } else {
     writeStream.write(data.toString());
     stdout.write('The text has been recorded \n');
   }
-  // для ctrl+c
+
   process.on('SIGINT', () => {
+    console.log('Good bye');
     process.exit();
   });
   process.on('exit', () => {

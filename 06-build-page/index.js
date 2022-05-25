@@ -6,6 +6,9 @@ const path = require('path');
 const pathStyle = path.join(__dirname, 'styles');
 const pethProject = path.join(__dirname, 'project-dist', 'style.css');
 
+const pathFilesDir = path.join(__dirname, 'assets');
+const pathCopyDir = path.join(__dirname, 'project-dist', 'assets');
+
 // ------------------ работаем с папкой project-dist --------------------------
 
 const pathDir = path.join(__dirname, 'project-dist');
@@ -15,7 +18,7 @@ fs.stat(pathDir, (err) => {
     fs.rm(pathDir, { recursive: true }, (err) => {
       if (err) throw err;
       addStyles();
-      addAssets();
+      addAssets(pathFilesDir, pathCopyDir);
       htmlBilder();
     });
   }
@@ -24,7 +27,7 @@ fs.stat(pathDir, (err) => {
   // }
   else {
     addStyles();
-    addAssets();
+    addAssets(pathFilesDir, pathCopyDir);
     htmlBilder();
   }
 });
@@ -77,41 +80,31 @@ const addStyles = () => {
 
 // --------------------------------- работа с папкой assets -------------------------
 
-const addAssets = () => {
-  const pathFilesDir = path.join(__dirname, 'assets');
-  const pathCopyDir = path.join(__dirname, 'project-dist', 'assets');
-
-  fs.stat(pathCopyDir, (err) => {
-    if (!err) {
-      fs.rm(pathCopyDir, { recursive: true }, (err) => {
-        if (err) throw err;
-        copyFiles(pathFilesDir);
-      });
-    } /*if (err.code === 'ENOENT')*/ else {
-      copyFiles(pathFilesDir);
-    }
+const addAssets = (pathFilesDir, pathCopyDir) => {
+  fs.mkdir(pathCopyDir, { recursive: true }, (err) => {
+    if (err) throw err;
   });
 
-  const copyFiles = (pathFilesDir) => {
-    fs.mkdir(pathCopyDir, { recursive: true }, (err) => {
-      if (err) throw err;
-    });
-
-    fs.readdir(pathFilesDir, (err, data) => {
-      if (err) throw err;
-      data.forEach((name) => {
-        const pathFile = path.join(pathFilesDir, name);
-        const newPathFile = path.join(pathCopyDir, name);
+  fs.readdir(pathFilesDir, { withFileTypes: true }, (err, data) => {
+    if (err) throw err;
+    data.forEach((file) => {
+      if (file.isFile()) {
+        const pathFile = path.join(pathFilesDir, file.name);
+        const newPathFile = path.join(pathCopyDir, file.name);
 
         fs.copyFile(pathFile, newPathFile, (err) => {
           if (err) throw err;
-          console.log(`Файл ${name} успешно скопирован`);
+          // console.log(`Файл ${file} успешно скопирован`);
         });
-      });
+      } else {
+        addAssets(
+          path.join(pathFilesDir, file.name),
+          path.join(pathCopyDir, file.name)
+        );
+      }
     });
-  };
+  });
 };
-
 //------------------ сборка html -----------------------------
 
 const htmlBilder = () => {
